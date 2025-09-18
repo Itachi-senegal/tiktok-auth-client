@@ -3,8 +3,20 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 
 //axios.defaults.baseURL = 'http://localhost:5000';
-axios.defaults.baseURL = process.env.REACT_APP_API_URL;
+//axios.defaults.baseURL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+console.log('🔍 Environment:', process.env.NODE_ENV);
+console.log('🔍 API_URL determined:', API_URL);
 axios.defaults.withCredentials = true;
+
+// Force l'URL en production
+if (window.location.hostname !== 'localhost') {
+  axios.defaults.baseURL = 'https://tiktok-auth-backend.onrender.com';
+  console.log('🚀 Production detected, using:', axios.defaults.baseURL);
+} else {
+  axios.defaults.baseURL = 'http://localhost:5000';
+  console.log('🏠 Local detected, using:', axios.defaults.baseURL);
+}
 
 export default function Login() {
   const [activeMethod, setActiveMethod] = useState('');
