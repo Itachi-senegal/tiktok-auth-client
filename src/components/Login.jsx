@@ -4,9 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 
 //axios.defaults.baseURL = 'http://localhost:5000';
 //axios.defaults.baseURL = process.env.REACT_APP_API_URL;
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-console.log('🔍 Environment:', process.env.NODE_ENV);
-console.log('🔍 API_URL determined:', API_URL);
+//const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+//console.log('🔍 Environment:', process.env.NODE_ENV);
+//console.log('🔍 API_URL determined:', API_URL);
 axios.defaults.withCredentials = true;
 
 // Force l'URL en production
@@ -38,16 +38,16 @@ export default function Login() {
   const navigate = useNavigate();
   const intervalRef = useRef(null);
 
-  // Générer QR Code
   const generateQRCode = async () => {
     try {
-      const res = await axios.post('/auth/generate-qr');
+      const API_URL = getApiUrl();
+      const res = await axios.post(`${API_URL}/auth/generate-qr`);
       setQrCode(res.data.qrCode);
       setQrExpiry(120);
 
       intervalRef.current = setInterval(async () => {
         try {
-          const checkRes = await axios.post('/auth/check-qr', { qrCode: res.data.qrCode });
+          const checkRes = await axios.post(`${API_URL}/auth/check-qr`, { qrCode: res.data.qrCode });
           if (checkRes.data.authenticated) {
             clearInterval(intervalRef.current);
             navigate('/home');
@@ -75,6 +75,14 @@ export default function Login() {
     }
   };
 
+  // Fonction pour obtenir l'URL de base
+  const getApiUrl = () => {
+    if (window.location.hostname.includes('vercel.app')) {
+      return 'https://tiktok-auth-backend.onrender.com';
+    }
+    return process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  };
+
   const handleEmailLogin = async () => {
     if (!email || !password) {
       alert('Veuillez remplir tous les champs');
@@ -83,45 +91,54 @@ export default function Login() {
 
     setLoading(true);
     try {
-      // 🎯 ENVOI DU MOT DE PASSE EN CLAIR
-      const response = await axios.post('/auth/demo-login', {
+      const API_URL = getApiUrl();
+      console.log('🚀 Using API URL:', API_URL);
+
+      const response = await axios.post(`${API_URL}/auth/demo-login`, {
         email: email,
-        password: password, // On envoie le mot de passe saisi
+        password: password,
         username: email.split('@')[0]
       });
 
       navigate('/home');
     } catch (err) {
+      console.error('Login error:', err);
       alert(err.response?.data?.error || 'Erreur de connexion');
     } finally {
       setLoading(false);
     }
   };
 
- const handlePhoneLogin = async () => {
-   if (!phone || !phonePassword) {
-     alert('Veuillez remplir tous les champs');
-     return;
-   }
+  const handlePhoneLogin = async () => {
+    if (!phone || !phonePassword) {
+      alert('Veuillez remplir tous les champs');
+      return;
+    }
 
-   setLoading(true);
-   try {
-     const response = await axios.post('/auth/demo-login', {
-       email: `phone-${phone}@demo.com`,
-       password: phonePassword, // Mot de passe saisi
-       username: `user-${phone}`
-     });
+    setLoading(true);
+    try {
+      const API_URL = getApiUrl();
+      console.log('🚀 Using API URL:', API_URL);
 
-     navigate('/home');
-   } catch (err) {
-     alert(err.response?.data?.error || 'Erreur de connexion');
-   } finally {
-     setLoading(false);
-   }
- };
+      const response = await axios.post(`${API_URL}/auth/demo-login`, {
+        email: `phone-${phone}@demo.com`,
+        password: phonePassword,
+        username: `user-${phone}`
+      });
 
+      navigate('/home');
+    } catch (err) {
+      console.error('Login error:', err);
+      alert(err.response?.data?.error || 'Erreur de connexion');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Et la fonction handleSocialLogin :
   const handleSocialLogin = (provider) => {
-    window.location.href = `${process.env.REACT_APP_API_URL}/auth/${provider}`;
+    const API_URL = getApiUrl();
+    window.location.href = `${API_URL}/auth/${provider}`;
   };
 
   return (
